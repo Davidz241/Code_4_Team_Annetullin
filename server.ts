@@ -4,6 +4,10 @@ interface Player {
   y: number;
 }
 
+// Provide a fallback declaration so TypeScript won't error when Deno globals
+// are not recognized by the environment/IDE.
+declare const Deno: any;
+
 const players: Record<string, Player> = {};
 const sockets = new Map<string, WebSocket>();
 
