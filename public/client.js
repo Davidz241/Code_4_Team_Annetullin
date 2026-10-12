@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -57,4 +55,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 gameLoop();
+export {};
 //# sourceMappingURL=client.js.map
