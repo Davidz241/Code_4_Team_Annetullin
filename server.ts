@@ -50,7 +50,7 @@ Deno.serve((request: Request) => {
       broadcast({ type: "join", player: players[id] }, id);
     });
 
-    socket.addEventListener("message", (event) => {
+    socket.addEventListener("message", (event: MessageEvent) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "move") {
         const p = players[id];
