@@ -9,7 +9,7 @@
     // See also https://aka.ms/tsconfig/module
     "module": "esnext",
     "target": "esnext",
-    "types": ["deno"],
+    // "types": ["deno"],
     // For nodejs:
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     // "types": ["node"],
