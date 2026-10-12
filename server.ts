@@ -19,20 +19,32 @@ function broadcast(message: unknown, except?: string) {
   }
 }
 
-Deno.serve((request: Request) => {
+Deno.serve(async (request: Request) => {
   const { pathname } = new URL(request.url);
 
   // Static file serving
   if (pathname === "/") {
-    return new Response(Deno.readTextFileSync("./public/index.html"), {
-      headers: { "content-type": "text/html" },
-    });
+    try {
+      const html = await Deno.readTextFile("./public/index.html");
+      return new Response(html, {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    } catch (err) {
+      console.error("Fehler beim Laden der index.html:", err);
+      return new Response("Index-Datei nicht gefunden", { status: 500 });
+    }
   }
 
   if (pathname === "/client.js") {
-    return new Response(Deno.readTextFileSync("./public/client.js"), {
-      headers: { "content-type": "application/javascript" },
-    });
+    try {
+      const js = await Deno.readTextFile("./public/client.js");
+      return new Response(js, {
+        headers: { "content-type": "application/javascript; charset=utf-8" },
+      });
+    } catch (err) {
+      console.error("Fehler beim Laden der client.js:", err);
+      return new Response("Client-Skript nicht gefunden", { status: 500 });
+    }
   }
 
   // WebSocket for game
@@ -73,10 +85,11 @@ Deno.serve((request: Request) => {
       sockets.delete(id);
       broadcast({ type: "leave", id });
     });
+    
 
     return response;
   }
-
+  
   return new Response("Not found", { status: 404 });
 });
 
