@@ -6,6 +6,10 @@ import { askMistral } from "./mistral.ts";
 
 const ROUNDS = 5;
 const WORDS = ["cactus", "penguin", "toaster", "unicorn", "volcano", "garden gnome", "octopus", "homework", "wizard"];
+const additionalWords = ["spaceship", "banana", "robot", "mermaid", "taco", "dragon", "pancake", "zombie", "rainbow"];
+// Two additional words requested: one adjective and one verb
+const additionalAdjective = ["glorious", "fluffy", "silly", "bouncy"]; // adjective
+const additionalVerb = ["dances", "jumps", "sings", "flies","sprint"]; // verb
 
 interface State { players: { id: string; name: string }[]; round: number; word: string }
 
@@ -19,7 +23,8 @@ export const game = {
   // A new round begins: returns the text all players see
   startRound(state: State): string {
     state.round++;
-    state.word = WORDS[Math.floor(Math.random() * WORDS.length)];
+    const pool: string[] = [...WORDS, ...additionalWords, ...additionalAdjective, ...additionalVerb];
+    state.word = pool[Math.floor(Math.random() * pool.length)];
     return `Round ${state.round}/${ROUNDS}: Write a crazy sentence with the word "${state.word}"`;
   },
 
