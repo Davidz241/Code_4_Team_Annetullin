@@ -2,6 +2,9 @@
 
 [ext_resource type="Script" uid="uid://b7cedv8j1mpmy" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="Texture2D" uid="uid://cmrfmruqnp2sb" path="res://vecteezy_cute-cats-set-collection-cartoon-flat-illustration_50911935.jpg" id="2_0xm2m"]
+[ext_resource type="FontFile" uid="uid://devgfudi5m7qk" path="res://Caudex-Regular.ttf" id="2_h2yge"]
+[ext_resource type="StyleBox" uid="uid://ckyrmvsapjwe4" path="res://Input.tres" id="3_1bvp3"]
+[ext_resource type="StyleBox" uid="uid://cp83a3suptlu" path="res://Input_Button.tres" id="4_lquwl"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_0xm2m"]
 font_size = 32
@@ -35,23 +38,32 @@ theme_override_constants/margin_bottom = 20
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1507518375]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="StatusLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1900724568]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_h2yge")
 text = "Wortspiel"
 label_settings = SubResource("LabelSettings_0xm2m")
 horizontal_alignment = 1
 
 [node name="ServerUrlInput" type="LineEdit" parent="MarginContainer/VBoxContainer" unique_id=712381559]
 layout_mode = 2
+theme_override_colors/clear_button_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
+theme_override_styles/normal = ExtResource("3_1bvp3")
+theme_override_styles/read_only = ExtResource("3_1bvp3")
+theme_override_styles/focus = ExtResource("3_1bvp3")
 text = "wss://code-4-team-annetullin.code4-team-annetullin.deno.net/"
 
 [node name="NameInput" type="LineEdit" parent="MarginContainer/VBoxContainer" unique_id=1633349936]
 layout_mode = 2
+theme_override_styles/normal = ExtResource("3_1bvp3")
+theme_override_styles/read_only = ExtResource("3_1bvp3")
 placeholder_text = "Gib einen Namen ein"
 
 [node name="ConnectButton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=553696829]
 layout_mode = 2
+theme_override_styles/normal = ExtResource("4_lquwl")
 text = "Connect"
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=97362298]
@@ -59,27 +71,25 @@ layout_mode = 2
 
 [node name="DisplayTextLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=2076509631]
 layout_mode = 2
+autowrap_mode = 3
 
 [node name="InputText" type="LineEdit" parent="MarginContainer/VBoxContainer" unique_id=858020458]
-modulate = Color(1, 0.61970925, 0.9844988, 1)
 layout_mode = 2
+theme_override_styles/normal = ExtResource("3_1bvp3")
+theme_override_styles/read_only = ExtResource("3_1bvp3")
+theme_override_styles/focus = ExtResource("3_1bvp3")
 
 [node name="SubmitButton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=599623516]
 layout_mode = 2
+theme_override_styles/normal = ExtResource("4_lquwl")
 text = "Submit"
 
 [node name="ResultLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer" unique_id=1627956300]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 
-[node name="ColorRect" type="ColorRect" parent="." unique_id=288215152]
+[node name="VecteezyCuteCatsSetCollectionCartoonFlatIllustration50911935" type="Sprite2D" parent="." unique_id=1772059646]
 show_behind_parent = true
-layout_mode = 0
-offset_left = -2.0
-offset_right = 1149.0
-offset_bottom = 647.0
-
-[node name="VecteezyCuteCatsSetCollectionCartoonFlatIllustration50911935" type="Sprite2D" parent="ColorRect" unique_id=1772059646]
-position = Vector2(559.00006, 328)
+position = Vector2(557.00006, 328)
 scale = Vector2(0.61510414, 0.61640626)
 texture = ExtResource("2_0xm2m")
