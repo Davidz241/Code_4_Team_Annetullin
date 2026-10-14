@@ -1,97 +1,79 @@
-interface Player {
-  id: string;
-  x: number;
-  y: number;
-}
+// server.ts
+// Start with: deno run --allow-net --allow-env --env-file=.env server.ts
 
-// Provide a fallback declaration so TypeScript won't error when Deno globals
-// are not recognized by the environment/IDE.
-declare const Deno: any;
+import { game } from "./game.ts";
 
-const players: Record<string, Player> = {};
-const sockets = new Map<string, WebSocket>();
+interface Player { id: string; name: string; ws: WebSocket }
+interface Room { id: string; players: Player[]; state: ReturnType<typeof game.setup> | null; inputs: Record<string, string>; bot?: Promise<string> }
 
-function broadcast(message: unknown, except?: string) {
-  for (const [id, socket] of sockets) {
-    if (id !== except) {
-      socket.send(JSON.stringify(message));
-    }
-  }
-}
+const rooms = new Map<string, Room>();
 
-Deno.serve(async (request: Request) => {
-  const { pathname } = new URL(request.url);
+Deno.serve({ port: 8080 }, (req: Request) => {
+  if (req.headers.get("upgrade") !== "websocket") return new Response("Game server is running!");
 
-  // Static file serving
-  if (pathname === "/") {
-    try {
-      const html = await Deno.readTextFile("./public/index.html");
-      return new Response(html, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    } catch (err) {
-      console.error("Fehler beim Laden der index.html:", err);
-      return new Response("Index-Datei nicht gefunden", { status: 500 });
-    }
-  }
+  const { socket, response } = Deno.upgradeWebSocket(req);
+  guardSocket(socket); // comment this line to disable idle/max timeout for testing (careful on Deno Deploy free plan)
+  let room: Room | undefined;
+  let me: Player | undefined;
 
-  if (pathname === "/client.js") {
-    try {
-      const js = await Deno.readTextFile("./public/client.js");
-      return new Response(js, {
-        headers: { "content-type": "application/javascript; charset=utf-8" },
-      });
-    } catch (err) {
-      console.error("Fehler beim Laden der client.js:", err);
-      return new Response("Client-Skript nicht gefunden", { status: 500 });
-    }
-  }
+  socket.onmessage = async (e: any) => {
+    const msg = JSON.parse(e.data);
 
-  // WebSocket for game
-  if (pathname === "/ws") {
-    if (request.headers.get("upgrade") !== "websocket") {
-      return new Response(null, { status: 501 });
-    }
-    
-    const { socket, response } = Deno.upgradeWebSocket(request);
-    guardSocket(socket); // comment this line to disable idle/max timeout for testing (careful on Deno Deploy free plan)
-    const id = crypto.randomUUID();
+    // A player joins a room. The game starts once enough players are there.
+    if (msg.type === "join" && !me) {
+      const roomId = msg.roomId || "lobby";
+      if (!rooms.has(roomId)) rooms.set(roomId, { id: roomId, players: [], state: null, inputs: {} });
+      room = rooms.get(roomId)!;
+      if (room.state) return socket.send(JSON.stringify({ type: "error", message: "Game already running." }));
 
-    players[id] = { id, x: 100, y: 100 };
-    sockets.set(id, socket);
+      me = { id: crypto.randomUUID(), name: msg.name || "Anonymous", ws: socket };
+      room.players.push(me);
+      broadcast(room, { type: "waiting", players: room.players.map((p) => p.name) });
 
-    socket.addEventListener("open", () => {
-      console.log(`Player ${id} connected`);
-      socket.send(JSON.stringify({ type: "init", id, players }));
-      broadcast({ type: "join", player: players[id] }, id);
-    });
-
-    socket.addEventListener("message", (event: MessageEvent) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "move") {
-        const p = players[id];
-        if (!p) return;
-        if (msg.dir === "up") p.y -= 10;
-        if (msg.dir === "down") p.y += 10;
-        if (msg.dir === "left") p.x -= 10;
-        if (msg.dir === "right") p.x += 10;
-        broadcast({ type: "update", player: p });
+      if (room.players.length === game.players) {
+        room.state = game.setup(room.players);
+        startRound(room);
       }
-    });
+    }
 
-    socket.addEventListener("close", () => {
-      console.log(`Player ${id} disconnected`);
-      delete players[id];
-      sockets.delete(id);
-      broadcast({ type: "leave", id });
-    });
-    
+    // A player submits their text. Once everyone has, the round ends.
+    const r = room;
+    if (msg.type === "submit" && r?.state && me && !(me.id in r.inputs)) {
+      r.inputs[me.id] = String(msg.text).slice(0, 200);
+      if (r.players.every((p) => p.id in r.inputs)) await endRound(r);
+    }
+  };
 
-    return response;
-  }
-  
-  return new Response("Not found", { status: 404 });
+  // If someone leaves, the room is closed for everyone. They can simply join again.
+  socket.onclose = () => {
+    if (!room || rooms.get(room.id) !== room) return;
+    rooms.delete(room.id);
+    for (const p of room.players) p.ws.close(1000, "A player left the game.");
+  };
+
+  return response;
 });
+
+function startRound(room: Room) {
+  room.inputs = {};
+  broadcast(room, { type: "round", prompt: game.startRound(room.state!) });
+  room.bot = game.botInput(room.state!); // the AI writes at the same time as the players
+}
+
+async function endRound(room: Room) {
+  room.inputs.bot = await room.bot!;
+  const result = game.endRound(room.state!, room.inputs);
+  broadcast(room, { type: "results", ...result });
+
+  if (result.gameOver) rooms.delete(room.id);
+  else setTimeout(() => startRound(room), 8000); // time to read the results
+}
+
+function broadcast(room: Room, msg: object) {
+  for (const p of room.players) {
+    if (p.ws.readyState === WebSocket.OPEN) p.ws.send(JSON.stringify(msg));
+  }
+}
 
 
 // When using Deno Deploy, the free plan's quota can be conserved by closing sockets that are idle or have been connected for too long
